@@ -42,6 +42,10 @@ ComfyUI (separate process, GPL-3.0)
 - The LTX-2 depth workflow exported to API format, plus the LTX-2 weights and the depth IC-LoRA, downloaded through ComfyUI
 - About 16 GB VRAM for 720p, or 12 GB for 540p. Comfy Cloud works too if you set `COMFY_URL`
 
+## Deploy
+
+Vercel can host the static site. In the project settings, leave the root as this repository and set the framework preset to Other. `vercel.json` serves the landing page at `/`, the city at `/city`, and brand files at `/brand`. The open does not call ComfyUI. The bridge stays on your machine for renders. After the project is live, add the domain in Vercel and point DNS at the records Vercel shows.
+
 ## Setup on a fresh machine
 
 1. Clone the repo and enter it.

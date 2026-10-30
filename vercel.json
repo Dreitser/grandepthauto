@@ -1,0 +1,13 @@
+{
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "",
+  "rewrites": [
+    { "source": "/", "destination": "/web/landing/index.html" },
+    { "source": "/city", "destination": "/web/city/index.html" },
+    { "source": "/city/", "destination": "/web/city/index.html" },
+    { "source": "/city/:path*", "destination": "/web/city/:path*" },
+    { "source": "/brand/:path*", "destination": "/web/brand/:path*" },
+    { "source": "/landing/:path*", "destination": "/web/landing/:path*" }
+  ]
+}

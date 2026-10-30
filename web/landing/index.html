@@ -2,187 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Grand Depth Auto</title>
   <meta name="description" content="Drive the previs. Render the movie. An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.">
   <meta property="og:title" content="Grand Depth Auto">
-  <meta property="og:description" content="Drive the previs. Render the movie. An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.">
+  <meta property="og:description" content="Drive the previs. Render the movie.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Grand Depth Auto">
-  <meta name="twitter:description" content="Drive the previs. Render the movie. An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.">
   <link rel="icon" id="favicon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Chivo:ital,wght@0,400;0,600;1,400&family=Chivo+Mono:wght@400;500&family=Yellowtail&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Chivo:wght@400;600&family=Chivo+Mono:wght@400&family=Yellowtail&display=swap" media="print" id="font-css">
   <style>
-    :root {
-      color-scheme: dark;
-      --ink: #f4f1ea;
-      --muted: rgba(244, 241, 234, 0.68);
-      --line: rgba(244, 241, 234, 0.18);
-      --bg: #050505;
-    }
+    :root { color-scheme: dark; --ink: #f4f1ea; --muted: rgba(244,241,234,.68); --line: rgba(244,241,234,.18); }
     * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--bg); color: var(--ink); }
-    body {
-      font-family: Chivo, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    a { color: inherit; }
-    .letterbox {
-      position: fixed;
-      left: 0;
-      right: 0;
-      height: 7vh;
-      background: #000;
-      z-index: 5;
-      pointer-events: none;
-    }
+    html, body { margin: 0; background: #050505; color: var(--ink); }
+    body { min-height: 100vh; min-height: 100svh; overflow-x: hidden; font-family: Chivo, "Segoe UI", sans-serif; }
+    .letterbox { position: fixed; left: 0; right: 0; height: max(24px, 7vh); background: #000; z-index: 5; pointer-events: none; }
     .letterbox.top { top: 0; }
     .letterbox.bottom { bottom: 0; }
-    .wrap {
-      width: min(920px, calc(100% - 40px));
-      margin: 0 auto;
-      padding: 12vh 0 14vh;
+    .wash { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0; pointer-events: none; transition: opacity 1.4s ease; }
+    body.is-open .wash.is-live { opacity: 1; }
+    .curtain { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 6; transition: opacity .7s ease; }
+    body.is-leaving .curtain { opacity: 1; pointer-events: auto; }
+    .open { position: relative; z-index: 1; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: max(12vh, 56px) 20px 10vh; text-align: center; }
+    h1 { margin: 0; max-width: 100%; font-family: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif; font-weight: 800; font-size: clamp(36px, 12vw, 104px); line-height: .84; letter-spacing: .01em; color: #f4f1ea; }
+    @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+      h1 { background: linear-gradient(180deg, #f7f4ee 0%, #9aa1aa 52%, #2a2e34 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
     }
-    .hud {
-      border: 1px solid var(--line);
-      padding: clamp(28px, 6vw, 72px) clamp(20px, 4vw, 48px) 36px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.03), transparent 30%),
-        #070707;
-      position: relative;
+    .auto { margin: 6px 0 0; font-family: Yellowtail, "Segoe Script", cursive; font-size: clamp(32px, 8vw, 68px); color: #f4f1ea; }
+    .rest, .more { opacity: 0; max-height: 0; overflow: hidden; }
+    body.is-open .rest, body.is-open .more { opacity: 1; max-height: 80rem; overflow: visible; transition: opacity 1.15s ease .12s; }
+    .pitch { font-size: clamp(20px, 4.5vw, 32px); margin: 22px 0 8px; }
+    .sub { color: var(--muted); max-width: min(42rem, 100%); margin: 0 auto; line-height: 1.45; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 22px; }
+    .launch, .sound {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 48px; min-width: 48px; padding: 10px 18px;
+      background: var(--ink); color: #111; text-decoration: none; border: 0; cursor: pointer;
+      font-family: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+      font-weight: 800; letter-spacing: .06em; font-size: 26px;
     }
-    .hud:before,
-    .hud:after {
-      content: "";
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      border: 1px solid rgba(244, 241, 234, 0.7);
-    }
-    .hud:before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
-    .hud:after { right: 10px; bottom: 10px; border-left: 0; border-top: 0; }
-    .kicker {
-      font-family: "Chivo Mono", ui-monospace, monospace;
-      font-size: 12px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    h1 {
-      font-family: "Big Shoulders Display", sans-serif;
-      font-weight: 800;
-      font-size: clamp(56px, 9vw, 104px);
-      line-height: 0.84;
-      letter-spacing: 0.01em;
-      margin: 12px 0 0;
-      max-width: 100%;
-      background: linear-gradient(180deg, #f7f4ee 0%, #a0a6ae 46%, #1a1c20 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .script {
-      font-family: Yellowtail, cursive;
-      font-size: clamp(40px, 6vw, 72px);
-      color: var(--ink);
-      margin: 0 0 18px;
-    }
-    .pitch { font-size: clamp(22px, 3vw, 34px); margin: 0 0 8px; }
-    .sub { color: var(--muted); max-width: 40rem; line-height: 1.45; }
-    .launch, button.launch {
-      display: inline-block;
-      margin-top: 28px;
-      background: var(--ink);
-      color: #111;
-      text-decoration: none;
-      font-family: "Big Shoulders Display", sans-serif;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      font-size: 28px;
-      padding: 10px 18px;
-      border: 0;
-    }
-    section { margin-top: 72px; }
-    h2 {
-      font-family: "Big Shoulders Display", sans-serif;
-      font-size: clamp(40px, 6vw, 64px);
-      letter-spacing: 0.04em;
-      margin: 0 0 16px;
-    }
-    pre {
-      font-family: "Chivo Mono", ui-monospace, monospace;
-      background: #0c0c0c;
-      border: 1px solid var(--line);
-      padding: 16px;
-      overflow: auto;
-      line-height: 1.6;
-    }
-    .cuts {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .cut {
-      border: 1px solid var(--line);
-      min-height: 180px;
-      padding: 20px;
-      background: linear-gradient(160deg, #141414, #070707 60%);
-    }
-    .cut span {
-      font-family: "Chivo Mono", ui-monospace, monospace;
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: 0.14em;
-    }
-    .cut h3 {
-      font-family: "Big Shoulders Display", sans-serif;
-      font-size: 36px;
-      margin: 10px 0;
-    }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-    }
+    .sound { background: transparent; color: var(--ink); border: 1px solid var(--line); font-size: 20px; }
+    .more { width: min(920px, calc(100% - 40px)); margin: 0 auto 14vh; text-align: left; }
+    h2 { font-family: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif; font-size: clamp(36px, 8vw, 60px); letter-spacing: .04em; margin: 48px 0 12px; }
+    pre { font-family: "Chivo Mono", ui-monospace, monospace; background: #0c0c0c; border: 1px solid var(--line); padding: 16px; overflow: auto; white-space: pre-wrap; word-break: break-word; line-height: 1.55; }
+    .cuts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .cut { border: 1px solid var(--line); padding: 20px; background: #0b0b0b; }
+    .cut span { font-family: "Chivo Mono", ui-monospace, monospace; color: var(--muted); font-size: 12px; letter-spacing: .14em; }
+    .cut h3 { font-family: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif; font-size: clamp(28px, 5vw, 36px); margin: 10px 0; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
     .gallery figure { margin: 0; }
     .gallery img { width: 100%; display: block; background: #000; }
-    .gallery figcaption {
-      font-family: "Chivo Mono", ui-monospace, monospace;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-    }
+    .gallery figcaption { font-family: "Chivo Mono", ui-monospace, monospace; font-size: 12px; color: var(--muted); margin-top: 6px; }
     @media (max-width: 720px) {
       .cuts { grid-template-columns: 1fr; }
+      .launch, .sound { width: 100%; }
     }
   </style>
+  <noscript><style>.rest,.more{opacity:1;max-height:none;overflow:visible}</style></noscript>
 </head>
 <body>
   <div class="letterbox top"></div>
   <div class="letterbox bottom"></div>
-  <main class="wrap">
-    <header class="hud">
-      <p class="kicker">Open Source Higgsfield, October 2026</p>
-      <h1>GRAND DEPTH</h1>
-      <p class="script">Auto</p>
+  <canvas id="wash" class="wash" aria-hidden="true"></canvas>
+  <div class="curtain" id="curtain"></div>
+  <header class="open">
+    <h1>GRAND DEPTH</h1>
+    <p class="auto">Auto</p>
+    <div class="rest" id="rest">
       <p class="pitch">Drive the previs. Render the movie.</p>
       <p class="sub">An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.</p>
-      <a class="launch" id="launch-hero" href="/city/">Launch the city</a>
-    </header>
-
-    <section id="run">
+      <div class="actions">
+        <a class="launch" id="enter" href="/city/">Launch the city</a>
+        <button class="sound" id="sound" type="button" aria-pressed="false">Sound</button>
+      </div>
+    </div>
+  </header>
+  <main class="more" id="more">
+    <section>
       <h2>Run</h2>
-      <pre id="clone">git clone https://github.com/Dreitser/grandepthauto.git
+      <pre>git clone https://github.com/Dreitser/grandepthauto.git
 cd grandepthauto
 node serve.mjs</pre>
-      <a class="launch" id="launch-run" href="/city/">Launch the city</a>
+      <p><a class="launch" id="enter-run" href="/city/">Launch the city</a></p>
     </section>
-
-    <section id="two-cuts">
+    <section>
       <h2>Two cuts</h2>
       <div class="cuts">
         <article class="cut">
@@ -197,7 +102,6 @@ node serve.mjs</pre>
         </article>
       </div>
     </section>
-
     <section id="loading-screens" hidden>
       <h2>Loading screens</h2>
       <div class="gallery" id="gallery"></div>
@@ -205,53 +109,13 @@ node serve.mjs</pre>
   </main>
   <script>
     (function () {
-      const onLanding = location.pathname.indexOf('/landing/') !== -1;
-      const city = onLanding ? '../city/' : '/city/';
-      const brand = onLanding ? '../brand/' : '/brand/';
-      document.getElementById('launch-hero').href = city;
-      document.getElementById('launch-run').href = city;
-
-      function ifImage(file, ok) {
-        const img = new Image();
-        img.onload = function () { ok(img); };
-        img.src = brand + file;
-      }
-
-      ifImage('icon.png', function () {
-        document.getElementById('favicon').href = brand + 'icon.png';
-      });
-      ifImage('og.png', function () {
-        const image = brand + 'og.png';
-        const absolute = new URL(image, location.href).href;
-        for (const selector of ['meta[property="og:image"]', 'meta[name="twitter:image"]']) {
-          let tag = document.querySelector(selector);
-          if (!tag) {
-            tag = document.createElement('meta');
-            if (selector.indexOf('og:image') !== -1) tag.setAttribute('property', 'og:image');
-            else tag.setAttribute('name', 'twitter:image');
-            document.head.appendChild(tag);
-          }
-          tag.setAttribute('content', absolute);
-        }
-      });
-
-      const shots = [
-        ['keyart.png', 'Key art'],
-        ['load-1.png', 'Loading screen 1'],
-        ['load-2.png', 'Loading screen 2'],
-        ['load-3.png', 'Loading screen 3']
-      ];
-      const gallery = document.getElementById('gallery');
-      const section = document.getElementById('loading-screens');
-      shots.forEach(function (shot) {
-        ifImage(shot[0], function (img) {
-          const figure = document.createElement('figure');
-          img.alt = shot[1];
-          const caption = document.createElement('figcaption');
-          caption.textContent = shot[1];
-          figure.append(img, caption);
-          gallery.appendChild(figure);
-          section.hidden = false;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var fonts = document.getElementById('font-css');
+          if (fonts) fonts.media = 'all';
+          var s = document.createElement('script');
+          s.src = location.pathname.indexOf('/landing/') !== -1 ? 'open.js' : '/landing/open.js';
+          document.body.appendChild(s);
         });
       });
     })();
