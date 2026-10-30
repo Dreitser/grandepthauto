@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grand Depth Auto</title>
+  <meta name="description" content="Drive the previs. Render the movie. An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.">
+  <meta property="og:title" content="Grand Depth Auto">
+  <meta property="og:description" content="Drive the previs. Render the movie. An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Grand Depth Auto">
+  <meta name="twitter:description" content="Drive the previs. Render the movie. An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.">
+  <link rel="icon" id="favicon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Chivo:ital,wght@0,400;0,600;1,400&family=Chivo+Mono:wght@400;500&family=Yellowtail&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f4f1ea;
+      --muted: rgba(244, 241, 234, 0.68);
+      --line: rgba(244, 241, 234, 0.18);
+      --bg: #050505;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: Chivo, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: inherit; }
+    .letterbox {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 7vh;
+      background: #000;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .letterbox.top { top: 0; }
+    .letterbox.bottom { bottom: 0; }
+    .wrap {
+      width: min(920px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 12vh 0 14vh;
+    }
+    .hud {
+      border: 1px solid var(--line);
+      padding: clamp(28px, 6vw, 72px) clamp(20px, 4vw, 48px) 36px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), transparent 30%),
+        #070707;
+      position: relative;
+    }
+    .hud:before,
+    .hud:after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(244, 241, 234, 0.7);
+    }
+    .hud:before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+    .hud:after { right: 10px; bottom: 10px; border-left: 0; border-top: 0; }
+    .kicker {
+      font-family: "Chivo Mono", ui-monospace, monospace;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    h1 {
+      font-family: "Big Shoulders Display", sans-serif;
+      font-weight: 800;
+      font-size: clamp(56px, 9vw, 104px);
+      line-height: 0.84;
+      letter-spacing: 0.01em;
+      margin: 12px 0 0;
+      max-width: 100%;
+      background: linear-gradient(180deg, #f7f4ee 0%, #a0a6ae 46%, #1a1c20 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .script {
+      font-family: Yellowtail, cursive;
+      font-size: clamp(40px, 6vw, 72px);
+      color: var(--ink);
+      margin: 0 0 18px;
+    }
+    .pitch { font-size: clamp(22px, 3vw, 34px); margin: 0 0 8px; }
+    .sub { color: var(--muted); max-width: 40rem; line-height: 1.45; }
+    .launch, button.launch {
+      display: inline-block;
+      margin-top: 28px;
+      background: var(--ink);
+      color: #111;
+      text-decoration: none;
+      font-family: "Big Shoulders Display", sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      font-size: 28px;
+      padding: 10px 18px;
+      border: 0;
+    }
+    section { margin-top: 72px; }
+    h2 {
+      font-family: "Big Shoulders Display", sans-serif;
+      font-size: clamp(40px, 6vw, 64px);
+      letter-spacing: 0.04em;
+      margin: 0 0 16px;
+    }
+    pre {
+      font-family: "Chivo Mono", ui-monospace, monospace;
+      background: #0c0c0c;
+      border: 1px solid var(--line);
+      padding: 16px;
+      overflow: auto;
+      line-height: 1.6;
+    }
+    .cuts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .cut {
+      border: 1px solid var(--line);
+      min-height: 180px;
+      padding: 20px;
+      background: linear-gradient(160deg, #141414, #070707 60%);
+    }
+    .cut span {
+      font-family: "Chivo Mono", ui-monospace, monospace;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+    }
+    .cut h3 {
+      font-family: "Big Shoulders Display", sans-serif;
+      font-size: 36px;
+      margin: 10px 0;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .gallery figure { margin: 0; }
+    .gallery img { width: 100%; display: block; background: #000; }
+    .gallery figcaption {
+      font-family: "Chivo Mono", ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    @media (max-width: 720px) {
+      .cuts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="letterbox top"></div>
+  <div class="letterbox bottom"></div>
+  <main class="wrap">
+    <header class="hud">
+      <p class="kicker">Open Source Higgsfield, October 2026</p>
+      <h1>GRAND DEPTH</h1>
+      <p class="script">Auto</p>
+      <p class="pitch">Drive the previs. Render the movie.</p>
+      <p class="sub">An open-weights cinematic engine built on Slop New York, ComfyUI and LTX-2.</p>
+      <a class="launch" id="launch-hero" href="/city/">Launch the city</a>
+    </header>
+
+    <section id="run">
+      <h2>Run</h2>
+      <pre id="clone">git clone https://github.com/Dreitser/grandepthauto.git
+cd grandepthauto
+node serve.mjs</pre>
+      <a class="launch" id="launch-run" href="/city/">Launch the city</a>
+    </section>
+
+    <section id="two-cuts">
+      <h2>Two cuts</h2>
+      <div class="cuts">
+        <article class="cut">
+          <span>01</span>
+          <h3>Drive the previs</h3>
+          <p>Walk, steal a car, and record color plus depth on the Manhattan streets.</p>
+        </article>
+        <article class="cut">
+          <span>02</span>
+          <h3>Render the movie</h3>
+          <p>Send the depth take to ComfyUI and LTX-2, then play it next to the previs.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="loading-screens" hidden>
+      <h2>Loading screens</h2>
+      <div class="gallery" id="gallery"></div>
+    </section>
+  </main>
+  <script>
+    (function () {
+      const onLanding = location.pathname.indexOf('/landing/') !== -1;
+      const city = onLanding ? '../city/' : '/city/';
+      const brand = onLanding ? '../brand/' : '/brand/';
+      document.getElementById('launch-hero').href = city;
+      document.getElementById('launch-run').href = city;
+
+      function ifImage(file, ok) {
+        const img = new Image();
+        img.onload = function () { ok(img); };
+        img.src = brand + file;
+      }
+
+      ifImage('icon.png', function () {
+        document.getElementById('favicon').href = brand + 'icon.png';
+      });
+      ifImage('og.png', function () {
+        const image = brand + 'og.png';
+        const absolute = new URL(image, location.href).href;
+        for (const selector of ['meta[property="og:image"]', 'meta[name="twitter:image"]']) {
+          let tag = document.querySelector(selector);
+          if (!tag) {
+            tag = document.createElement('meta');
+            if (selector.indexOf('og:image') !== -1) tag.setAttribute('property', 'og:image');
+            else tag.setAttribute('name', 'twitter:image');
+            document.head.appendChild(tag);
+          }
+          tag.setAttribute('content', absolute);
+        }
+      });
+
+      const shots = [
+        ['keyart.png', 'Key art'],
+        ['load-1.png', 'Loading screen 1'],
+        ['load-2.png', 'Loading screen 2'],
+        ['load-3.png', 'Loading screen 3']
+      ];
+      const gallery = document.getElementById('gallery');
+      const section = document.getElementById('loading-screens');
+      shots.forEach(function (shot) {
+        ifImage(shot[0], function (img) {
+          const figure = document.createElement('figure');
+          img.alt = shot[1];
+          const caption = document.createElement('figcaption');
+          caption.textContent = shot[1];
+          figure.append(img, caption);
+          gallery.appendChild(figure);
+          section.hidden = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "grandepthauto",
+  "private": true,
+  "license": "MIT",
+  "description": "Drive the previs. Render the movie.",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "bridge": "npm start --prefix bridge"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

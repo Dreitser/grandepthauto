@@ -1,0 +1,12 @@
+{
+  "name": "grandepthauto-bridge",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

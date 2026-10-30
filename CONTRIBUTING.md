@@ -9,7 +9,7 @@ You need a current Chrome or Edge with WebGPU.
 1. Clone the repository.
 2. Serve the `web` folder with any static file server. With Node.js installed, from the repository root: `npx serve web`
 3. Open the URL it prints. The landing page is the site root. "Launch the city" opens the Manhattan scene.
-4. Rendering is optional. Copy `bridge/.env.example` to `bridge/.env`, then from `bridge` run `npm install` and `npm start`. ComfyUI should already be running. `COMFY_URL` defaults to `http://127.0.0.1:8188`.
+4. Rendering is optional. Copy `bridge/.env.example` to `bridge/.env`, then from the repository root run `node bridge/server.js`. ComfyUI should already be running. `COMFY_URL` defaults to `http://127.0.0.1:8188`.
 
 Setup details and model requirements are in the root README.
 

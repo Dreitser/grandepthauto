@@ -1,0 +1,14 @@
+{
+  "realistic": {
+    "label": "Realistic",
+    "prompt": "Photoreal live action on real Manhattan streets, natural light, 35mm, the same camera move as the previs."
+  },
+  "psychedelic": {
+    "label": "Psychedelic",
+    "prompt": "Psychedelic color, neon bloom, liquid highlights, the same streets and the same camera move as the previs."
+  },
+  "custom": {
+    "label": "Custom",
+    "prompt": ""
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "_placeholder": true,
+  "note": "Replace this file with a ComfyUI API-format export of the LTX-2 depth workflow. Steps are in workflows/README.md. The bridge will not queue this placeholder."
+}
