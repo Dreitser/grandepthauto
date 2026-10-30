@@ -44,7 +44,7 @@ ComfyUI (separate process, GPL-3.0)
 
 ## Deploy
 
-Vercel can host the static site. In the project settings, leave the root as this repository and set the framework preset to Other. `vercel.json` serves the landing page at `/`, the city at `/city`, and brand files at `/brand`. The open does not call ComfyUI. The bridge stays on your machine for renders. After the project is live, add the domain in Vercel and point DNS at the records Vercel shows.
+Vercel hosts the static site. Leave the project root as this repository. `vercel.json` builds with `node scripts/vercel-static.mjs` and publishes `dist`. That folder is a copy of `web`, with the cinematic open at `/`. `/city` and `/brand` are the same folders. The open does not call ComfyUI. The bridge stays on your machine for renders. If the Vercel dashboard has a blank build command saved, clear that override so this file is used. After the project is live, add the domain in Vercel and point DNS at the records Vercel shows.
 
 ## Setup on a fresh machine
 
