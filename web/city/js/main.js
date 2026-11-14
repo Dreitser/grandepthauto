@@ -38,6 +38,8 @@ async function initApp() {
 
   async function showLoadingStage(message) {
     if (loadingStatus) loadingStatus.textContent = message;
+    const mission = document.getElementById('gta-mission-sub');
+    if (mission && document.body.classList.contains('city-live')) mission.textContent = message;
     if (loadingTrack) loadingTrack.classList.add('is-indeterminate');
     if (document.hidden) return;
     // Let the label paint before synchronous work. The timeout also lets hidden tabs keep loading.
@@ -327,6 +329,9 @@ async function initApp() {
     placeModeIndicator();
     const ent = controllerManager.getActiveEntity();
     if (elMode) elMode.textContent = ent.label;
+    const weaponName = document.getElementById('gta-weapon-name');
+    const weaponLabel = { person: 'Fists', car: 'Taxi', cyclist: 'Bike', helicopter: 'Maverick' };
+    if (weaponName) weaponName.textContent = weaponLabel[mode] || ent.label;
     renderControlHints(mode);
 
     // If currently on a static scenic camera, switch to 3rd-Person Chase so user sees their selected character/vehicle
@@ -529,6 +534,23 @@ async function initApp() {
     });
   }
 
+  let pausePresent = false;
+  let pipelineArmed = false;
+  async function armPipeline() {
+    if (pipelineArmed) return;
+    pipelineArmed = true;
+    pausePresent = true;
+    try {
+      await precompileShaders();
+    } catch (error) {
+      console.warn('[look]', error);
+    } finally {
+      renderer.setRenderTarget(null);
+      renderer.setMRT(null);
+      pausePresent = false;
+    }
+  }
+
   const grand = setupGrand({
     depthViewMode,
     renderPipeline,
@@ -536,7 +558,8 @@ async function initApp() {
     cameraSystem,
     controllerManager,
     trafficSystem,
-    selectMode
+    selectMode,
+    armPipeline
   });
 
   // Modes 2-4, cameras (V / 5-0), and HUD (H). Key 1 is the depth view. See NOTES.md.
@@ -605,6 +628,32 @@ async function initApp() {
   // the web fonts change the buttons' widths once they arrive
   if (document.fonts) document.fonts.ready.then(placeModeIndicator);
   markInit('ui');
+
+  function presentScene() {
+    renderer.setRenderTarget(null);
+    renderer.setMRT(null);
+    renderer.render(scene, cameraSystem.camera);
+  }
+
+  function revealCity() {
+    document.body.classList.add('city-live');
+    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+    audioSystem.ready = true;
+    grand.ready = true;
+    const mission = document.getElementById('gta-mission-sub');
+    if (mission && mission.textContent.indexOf('Compil') === 0) mission.textContent = 'City picture is on.';
+  }
+
+  // The plain scene is the picture. Reflections, bloom, and depth stay off until Add turns them on.
+  try {
+    cameraSystem.update(0.016, 0);
+    presentScene();
+    revealCity();
+  } catch (error) {
+    if (loadingStatus) loadingStatus.textContent = error.message || 'The picture did not draw.';
+    console.error('[picture]', error);
+  }
+  markInit('picture');
 
   // Compile shaders behind the loading screen. Overlapping compileAsync() jobs keep compilation moving
   // while individual jobs yield to the browser.
@@ -684,9 +733,8 @@ async function initApp() {
     for (const o of culled) o.frustumCulled = true;
   }
 
-  await precompileShaders();
   markInit('compile');
-  await showLoadingStage('Preparing shadows and the first frame...');
+  // Picture is already on screen. This compile only runs after Look or Depth is turned on.
 
   // 6. Animation Loop
   let lastTime = performance.now();
@@ -729,47 +777,21 @@ async function initApp() {
     lightingSystem.update(cameraSystem.currentPos);
     mapSystem.update();
     audioSystem.update(dt, elapsed, cameraSystem.camera, lightingSystem.activePresetId === 'midnight');
-    if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
+    if (warmedUp && !pausePresent) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
     // Traffic collisions can move the player after controller updates; finalize moving hierarchies here.
     for (const root of dynamicRoots) root.updateMatrixWorld();
 
-    // Render frame via TSL RenderPipeline (SSR + Bloom)
-    if (!warmedUp) {
-      // First frame = pipeline warm-up behind the loading screen, for what precompileShaders() can't reach (the shadow
-      // map passes): with frustum culling off, every visible material's pipelines compile now instead of stalling the
-      // first time the camera turns towards it (one chunk / shadow stand-in per shared pipeline is enough)
-      const culled = [];
-      const pipelines = new Set();
-      scene.traverseVisible((o) => {
-        const pipeline = o.userData.sharesPipelineWith || o;
-        if (pipelines.has(pipeline)) return;
-        pipelines.add(pipeline);
-        if (o.frustumCulled) {
-          culled.push(o);
-          o.frustumCulled = false;
-        }
-      });
-      renderPipeline.render();
-      for (const o of culled) o.frustumCulled = true;
-      markInit('warmup');
+    if (!pausePresent) {
+      if (grand.usesPipeline()) renderPipeline.render();
+      else presentScene();
     }
-    renderPipeline.render();
     if (!warmedUp) {
       warmedUp = true;
+      revealCity();
       markInit('firstFrame');
-      // The loading screen stays up until the GPU has got through the first frame (and the pipelines its warm-up
-      // compiled), i.e. until the city is actually on screen
-      const device = renderer.backend.device;
-      if (loadingStatus) loadingStatus.textContent = 'Waiting for graphics to finish the first frame...';
-      Promise.resolve(device && device.queue.onSubmittedWorkDone()).catch(() => {}).then(() => {
-        markInit('gpu');
-        console.log(`[init] ${initTimings.join(', ')}`);
-        initTimings = null;
-        if (loadingOverlay) loadingOverlay.classList.add('hidden');
-        audioSystem.ready = true;
-        grand.ready = true;
-        setLoadingProgress(1);
-      });
+      console.log(`[init] ${initTimings.join(', ')}`);
+      initTimings = null;
+      setLoadingProgress(1);
     }
 
     // Telemetry uses wall time, not the clamped simulation step, so slow frames and high-refresh displays report

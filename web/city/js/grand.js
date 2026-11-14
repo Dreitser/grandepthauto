@@ -26,7 +26,8 @@ function setupGrand({
   cameraSystem,
   controllerManager,
   trafficSystem,
-  selectMode
+  selectMode,
+  armPipeline
 }) {
   const grand = {
     ready: false,
@@ -38,6 +39,7 @@ function setupGrand({
     colorUrl: '',
     take: null
   };
+  const systems = { look: false, depth: false, record: false, render: false };
 
   const hud = document.createElement('div');
   hud.id = 'gda-hud';
@@ -50,6 +52,7 @@ function setupGrand({
     <span id="gda-rec" class="gda-rec" hidden>REC</span>
     <p id="gda-note" class="gda-note" hidden></p>
   `;
+  hud.hidden = true;
   document.body.appendChild(hud);
   const badge = hud.querySelector('#gda-badge');
   const secondsInput = hud.querySelector('#gda-seconds');
@@ -98,9 +101,50 @@ function setupGrand({
   `;
   document.body.appendChild(player);
 
+  const mission = document.getElementById('gta-mission-sub');
+
   function note(text) {
     noteEl.hidden = !text;
     noteEl.textContent = text || '';
+    if (mission && text) mission.textContent = text;
+  }
+
+  function paintSystems() {
+    document.querySelectorAll('#gta-systems [data-system]').forEach((button) => {
+      const name = button.getAttribute('data-system');
+      button.setAttribute('aria-pressed', systems[name] ? 'true' : 'false');
+    });
+  }
+
+  function usesPipeline() {
+    return systems.look || systems.depth || !!grand.recording;
+  }
+
+  function setSystem(name, on) {
+    if (name === 'look') systems.lookPinned = on;
+    systems[name] = on;
+    if (name === 'depth') {
+      if (!on) {
+        grand.depthMode = 0;
+        depthViewMode.value = 0;
+        badge.textContent = DEPTH_MODES[0];
+        if (!systems.lookPinned) systems.look = false;
+      } else {
+        systems.look = true;
+        if (grand.depthMode === 0) grand.depthMode = 1;
+        depthViewMode.value = grand.depthMode;
+        badge.textContent = DEPTH_MODES[grand.depthMode];
+      }
+    }
+    if (usesPipeline()) armPipeline?.();
+    if (name === 'look' && !on && !systems.depth) depthViewMode.value = 0;
+    hud.hidden = !systems.record;
+    if (name === 'render') panel.hidden = !on;
+    if (name === 'render' && on && !grand.take) note('Record a take first. Render talks to the bridge when that is running.');
+    if (name === 'record' && on) note('Record is on. Press R for a take.');
+    if (name === 'depth' && on) note(`Depth view: ${DEPTH_MODES[grand.depthMode]}. Press 1 to cycle.`);
+    if (name === 'look' && on) note('Look adds reflections and color grade on the next frames.');
+    paintSystems();
   }
 
   function logEvent(type) {
@@ -111,10 +155,27 @@ function setupGrand({
   }
 
   function cycleDepth() {
+    if (!systems.depth) {
+      setSystem('depth', true);
+      return;
+    }
     grand.depthMode = (grand.depthMode + 1) % 3;
+    if (grand.depthMode === 0) {
+      setSystem('depth', false);
+      note('City picture is on.');
+      return;
+    }
     depthViewMode.value = grand.depthMode;
     badge.textContent = DEPTH_MODES[grand.depthMode];
+    note(`Depth view: ${DEPTH_MODES[grand.depthMode]}.`);
   }
+
+  document.querySelectorAll('#gta-systems [data-system]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const name = button.getAttribute('data-system');
+      setSystem(name, !systems[name]);
+    });
+  });
 
   function beginCarjack() {
     if (controllerManager.scripted || controllerManager.activeMode !== 'person') return;
@@ -167,7 +228,10 @@ function setupGrand({
     const tag = event.target && event.target.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
     if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.code === 'KeyR') startRecording();
+    if (event.code === 'KeyR') {
+      if (!systems.record) setSystem('record', true);
+      startRecording();
+    }
     else if (event.code === 'KeyE') beginCarjack();
     else if (event.code === 'KeyF') exitCar();
     else if (event.code === 'KeyL') note('Live mode is experimental and is not wired in this build.');
@@ -259,7 +323,7 @@ function setupGrand({
       }
     };
     note(`Take ready, ${take.frames} frames.`);
-    panel.hidden = false;
+    panel.hidden = !systems.render;
   }
 
   function renderPass(mode) {
@@ -373,7 +437,13 @@ function setupGrand({
     panel.hidden = true;
   }
 
-  return { cycleDepth, onFrame: onFrame, get ready() { return grand.ready; }, set ready(value) { grand.ready = value; } };
+  return {
+    cycleDepth,
+    onFrame,
+    usesPipeline,
+    get ready() { return grand.ready; },
+    set ready(value) { grand.ready = value; }
+  };
 }
 
 export { setupGrand, RECORD_FPS, RECORD_WIDTH, RECORD_HEIGHT, frameCountFor };
